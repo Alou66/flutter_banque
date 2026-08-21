@@ -6,7 +6,7 @@ enum DataSourceMode { mock, remote }
 /// docs/mock-to-remote-migration.md). Reste à `mock` dans le code committé :
 /// les tests d'intégration (`test/*_test.dart`) pilotent l'app via le Mock.
 abstract class AppConfig {
-  static const DataSourceMode dataSourceMode = DataSourceMode.mock;
+  static const DataSourceMode dataSourceMode = DataSourceMode.remote;
 
   // auth_api (port 8081) : OTP, login, émission du JWT.
   // Émulateur Android : remplacer localhost par 10.0.2.2.
