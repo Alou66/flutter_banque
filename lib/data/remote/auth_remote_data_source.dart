@@ -1,29 +1,30 @@
 import '../../core/network/api_client.dart';
 import '../../core/network/api_endpoints.dart';
+import '../../models/auth_session.dart';
 import '../../models/auth_user.dart';
 import '../../models/dto/auth_user_dto.dart';
+import '../../models/dto/login_response_dto.dart';
 import '../../models/registration_data.dart';
 import '../auth_data_source.dart';
 
-/// Implémentation REST d'[AuthDataSource], prête à remplacer
-/// [AuthMockDataSource] dès que le backend Auth existera : aucun repository,
-/// provider ni écran n'a besoin de changer.
+/// Implémentation REST d'[AuthDataSource] contre auth_api (OTP, login) et
+/// banque1_api (comptes) : deux services distincts, donc deux [ApiClient].
 class AuthRemoteDataSource implements AuthDataSource {
-  AuthRemoteDataSource(this._client);
+  AuthRemoteDataSource(this._authClient, this._banqueClient);
 
-  final ApiClient _client;
+  final ApiClient _authClient;
+  final ApiClient _banqueClient;
 
   @override
-  Future<AuthUser> login({
+  Future<AuthSession> login({
     required String phoneNumber,
     required String pin,
   }) async {
-    final response = await _client.guard(() => _client.dio.post(
-          ApiEndpoints.login,
-          data: {'phoneNumber': phoneNumber, 'pin': pin},
+    final data = await _authClient.guardData(() => _authClient.dio.post(
+          AuthEndpoints.login,
+          data: {'telephone': phoneNumber, 'pin': pin},
         ));
-    return AuthUserDto.fromJson(response.data as Map<String, dynamic>)
-        .toDomain();
+    return LoginResponseDto.fromJson(data as Map<String, dynamic>).toDomain();
   }
 
   @override
@@ -32,13 +33,11 @@ class AuthRemoteDataSource implements AuthDataSource {
     required String lastName,
     required String phoneNumber,
   }) async {
-    await _client.guard(() => _client.dio.post(
-          ApiEndpoints.register,
-          data: {
-            'firstName': firstName,
-            'lastName': lastName,
-            'phoneNumber': phoneNumber,
-          },
+    // auth_api ne crée pas le compte à cette étape (prénom/nom ne sont
+    // utiles qu'à POST /comptes, dans createPin) : elle envoie juste l'OTP.
+    await _authClient.guardData(() => _authClient.dio.post(
+          AuthEndpoints.sendOtp,
+          data: {'telephone': phoneNumber},
         ));
   }
 
@@ -47,28 +46,31 @@ class AuthRemoteDataSource implements AuthDataSource {
     required String phoneNumber,
     required String otp,
   }) async {
-    await _client.guard(() => _client.dio.post(
-          ApiEndpoints.verifyOtp,
-          data: {'phoneNumber': phoneNumber, 'otp': otp},
+    await _authClient.guardData(() => _authClient.dio.post(
+          AuthEndpoints.verifyOtp,
+          data: {'telephone': phoneNumber, 'otp': otp},
         ));
   }
 
   @override
-  Future<AuthUser> createPin({
+  Future<AuthSession> createPin({
     required RegistrationData data,
     required String pin,
   }) async {
-    final response = await _client.guard(() => _client.dio.post(
-          ApiEndpoints.createPin,
+    // banque1_api crée le compte (l'OTP vérifié à l'étape précédente est
+    // revalidé côté serveur) mais n'émet pas de JWT : on enchaîne un login
+    // pour obtenir un vrai jeton de session, comme le ferait l'utilisateur.
+    await _banqueClient.guardData(() => _banqueClient.dio.post(
+          BanqueEndpoints.comptes,
           data: {
-            'firstName': data.firstName,
-            'lastName': data.lastName,
-            'phoneNumber': data.phoneNumber,
+            'prenom': data.firstName,
+            'nom': data.lastName,
+            'telephone': data.phoneNumber,
+            'numPiece': data.numPiece,
             'pin': pin,
           },
         ));
-    return AuthUserDto.fromJson(response.data as Map<String, dynamic>)
-        .toDomain();
+    return login(phoneNumber: data.phoneNumber, pin: pin);
   }
 
   @override
@@ -76,19 +78,17 @@ class AuthRemoteDataSource implements AuthDataSource {
     required String phoneNumber,
     required String pin,
   }) async {
-    await _client.guard(() => _client.dio.post(
-          ApiEndpoints.verifyPin,
-          data: {'phoneNumber': phoneNumber, 'pin': pin},
+    await _banqueClient.guardData(() => _banqueClient.dio.post(
+          BanqueEndpoints.verifyPin,
+          data: {'pin': pin},
         ));
   }
 
   @override
   Future<AuthUser> getProfile({required String phoneNumber}) async {
-    final response = await _client.guard(() => _client.dio.get(
-          ApiEndpoints.profile,
-        ));
-    return AuthUserDto.fromJson(response.data as Map<String, dynamic>)
-        .toDomain();
+    final data = await _banqueClient
+        .guardData(() => _banqueClient.dio.get(BanqueEndpoints.compteMe));
+    return AuthUserDto.fromJson(data as Map<String, dynamic>).toDomain();
   }
 
   @override
@@ -98,16 +98,15 @@ class AuthRemoteDataSource implements AuthDataSource {
     required String lastName,
     required String phoneNumber,
   }) async {
-    final response = await _client.guard(() => _client.dio.put(
-          ApiEndpoints.profile,
+    final data = await _banqueClient.guardData(() => _banqueClient.dio.put(
+          BanqueEndpoints.comptes,
           data: {
-            'firstName': firstName,
-            'lastName': lastName,
-            'phoneNumber': phoneNumber,
+            'prenom': firstName,
+            'nom': lastName,
+            'telephone': phoneNumber,
           },
         ));
-    return AuthUserDto.fromJson(response.data as Map<String, dynamic>)
-        .toDomain();
+    return AuthUserDto.fromJson(data as Map<String, dynamic>).toDomain();
   }
 
   @override
@@ -116,8 +115,8 @@ class AuthRemoteDataSource implements AuthDataSource {
     required String currentPin,
     required String newPin,
   }) async {
-    await _client.guard(() => _client.dio.post(
-          ApiEndpoints.changePin,
+    await _banqueClient.guardData(() => _banqueClient.dio.post(
+          BanqueEndpoints.changePin,
           data: {'currentPin': currentPin, 'newPin': newPin},
         ));
   }

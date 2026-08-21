@@ -1,6 +1,8 @@
 import '../wallet.dart';
 
-/// Représentation JSON d'un [Wallet], telle qu'échangée avec l'API REST.
+/// Représentation JSON d'un [Wallet]. banque1_api ne renvoie ni "wallet"
+/// dédié ni devise : le solde vient de `CompteResponse` (`{ solde,
+/// telephone, ... }`) et la devise est fixée à FCFA côté client.
 class WalletDto {
   const WalletDto({
     required this.balance,
@@ -13,9 +15,9 @@ class WalletDto {
   final String accountNumber;
 
   factory WalletDto.fromJson(Map<String, dynamic> json) => WalletDto(
-        balance: (json['balance'] as num).toDouble(),
-        currency: json['currency'] as String,
-        accountNumber: json['accountNumber'] as String,
+        balance: (json['solde'] as num).toDouble(),
+        currency: json['currency'] as String? ?? 'FCFA',
+        accountNumber: json['telephone'] as String,
       );
 
   factory WalletDto.fromDomain(Wallet wallet) => WalletDto(
@@ -25,9 +27,9 @@ class WalletDto {
       );
 
   Map<String, dynamic> toJson() => {
-        'balance': balance,
+        'solde': balance,
         'currency': currency,
-        'accountNumber': accountNumber,
+        'telephone': accountNumber,
       };
 
   Wallet toDomain() => Wallet(

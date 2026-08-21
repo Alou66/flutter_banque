@@ -1,7 +1,6 @@
 import '../../core/network/api_client.dart';
 import '../../core/network/api_endpoints.dart';
 import '../../models/dto/transaction_dto.dart';
-import '../../models/dto/transaction_page_dto.dart';
 import '../../models/dto/wallet_dto.dart';
 import '../../models/transaction.dart';
 import '../../models/transaction_page.dart';
@@ -9,9 +8,13 @@ import '../../models/transaction_query.dart';
 import '../../models/wallet.dart';
 import '../wallet_data_source.dart';
 
-/// Implémentation REST de [WalletDataSource], prête à remplacer
-/// [WalletMockDataSource] dès que le backend Wallet existera : aucun
-/// repository, provider ni écran n'a besoin de changer.
+/// Implémentation REST de [WalletDataSource] contre banque1_api.
+///
+/// banque1_api ne fournit aucun filtre/tri/pagination côté serveur pour
+/// `GET /transactions/me` : il renvoie la liste complète. Cette couche
+/// applique donc [TransactionQuery] côté client (même logique que
+/// [WalletMockDataSource]), pour que [TransactionQueryController] et les
+/// écrans d'historique n'aient rien à savoir de cette limitation.
 class WalletRemoteDataSource implements WalletDataSource {
   WalletRemoteDataSource(this._client);
 
@@ -19,10 +22,9 @@ class WalletRemoteDataSource implements WalletDataSource {
 
   @override
   Future<Wallet> fetchWallet(String userId) async {
-    final response =
-        await _client.guard(() => _client.dio.get(ApiEndpoints.wallet));
-    return WalletDto.fromJson(response.data as Map<String, dynamic>)
-        .toDomain();
+    final data = await _client
+        .guardData(() => _client.dio.get(BanqueEndpoints.compteMe));
+    return WalletDto.fromJson(data as Map<String, dynamic>).toDomain();
   }
 
   @override
@@ -30,11 +32,9 @@ class WalletRemoteDataSource implements WalletDataSource {
     String userId, {
     int limit = 5,
   }) async {
-    final response = await _client.guard(() => _client.dio.get(
-          ApiEndpoints.transactions,
-          queryParameters: {'limit': limit},
-        ));
-    return _parseTransactions(response.data as List);
+    final all = await _fetchAllTransactions();
+    final sorted = [...all]..sort((a, b) => b.date.compareTo(a.date));
+    return sorted.take(limit).toList();
   }
 
   @override
@@ -42,19 +42,35 @@ class WalletRemoteDataSource implements WalletDataSource {
     String userId,
     TransactionQuery query,
   ) async {
-    final response = await _client.guard(() => _client.dio.get(
-          ApiEndpoints.transactions,
-          queryParameters: {
-            if (query.type != null) 'type': query.type!.name,
-            if (query.searchText.isNotEmpty) 'q': query.searchText,
-            'sortBy': query.sortBy.name,
-            'sortOrder': query.sortOrder.name,
-            'page': query.page,
-            'pageSize': query.pageSize,
-          },
-        ));
-    return TransactionPageDto.fromJson(response.data as Map<String, dynamic>)
-        .toDomain();
+    final all = await _fetchAllTransactions();
+
+    var filtered = all.where((t) => query.type == null || t.type == query.type);
+    final search = query.searchText.trim().toLowerCase();
+    if (search.isNotEmpty) {
+      filtered = filtered.where((t) => t.label.toLowerCase().contains(search));
+    }
+
+    final results = filtered.toList()
+      ..sort((a, b) {
+        final comparison = switch (query.sortBy) {
+          TransactionSortBy.date => a.date.compareTo(b.date),
+          TransactionSortBy.amount => a.amount.compareTo(b.amount),
+          TransactionSortBy.type => a.type.name.compareTo(b.type.name),
+        };
+        return query.sortOrder == SortOrder.asc ? comparison : -comparison;
+      });
+
+    final start = (query.page - 1) * query.pageSize;
+    final end = (start + query.pageSize).clamp(0, results.length);
+    final pageItems =
+        start >= results.length ? <Transaction>[] : results.sublist(start, end);
+
+    return TransactionPage(
+      items: pageItems,
+      page: query.page,
+      pageSize: query.pageSize,
+      totalCount: results.length,
+    );
   }
 
   @override
@@ -62,12 +78,11 @@ class WalletRemoteDataSource implements WalletDataSource {
     required String userId,
     required double amount,
   }) async {
-    final response = await _client.guard(() => _client.dio.post(
-          ApiEndpoints.deposit,
-          data: {'amount': amount},
+    final data = await _client.guardData(() => _client.dio.post(
+          BanqueEndpoints.depot,
+          data: {'montant': amount.round()},
         ));
-    return TransactionDto.fromJson(response.data as Map<String, dynamic>)
-        .toDomain();
+    return TransactionDto.fromJson(data as Map<String, dynamic>).toDomain();
   }
 
   @override
@@ -75,12 +90,11 @@ class WalletRemoteDataSource implements WalletDataSource {
     required String userId,
     required double amount,
   }) async {
-    final response = await _client.guard(() => _client.dio.post(
-          ApiEndpoints.withdraw,
-          data: {'amount': amount},
+    final data = await _client.guardData(() => _client.dio.post(
+          BanqueEndpoints.retrait,
+          data: {'montant': amount.round()},
         ));
-    return TransactionDto.fromJson(response.data as Map<String, dynamic>)
-        .toDomain();
+    return TransactionDto.fromJson(data as Map<String, dynamic>).toDomain();
   }
 
   @override
@@ -89,16 +103,28 @@ class WalletRemoteDataSource implements WalletDataSource {
     required double amount,
     required String label,
   }) async {
-    final response = await _client.guard(() => _client.dio.post(
-          ApiEndpoints.payment,
-          data: {'amount': amount, 'label': label},
+    final data = await _client.guardData(() => _client.dio.post(
+          BanqueEndpoints.paiement,
+          data: {'montant': amount.round()},
         ));
-    return TransactionDto.fromJson(response.data as Map<String, dynamic>)
-        .toDomain();
+    final transaction =
+        TransactionDto.fromJson(data as Map<String, dynamic>).toDomain();
+    // banque1_api ne stocke aucun libellé : on réaffiche celui saisi par
+    // l'utilisateur pour cette transaction fraîchement créée (perdu au
+    // prochain rechargement de l'historique, faute de persistance serveur).
+    return Transaction(
+      id: transaction.id,
+      type: transaction.type,
+      label: label,
+      amount: transaction.amount,
+      date: transaction.date,
+    );
   }
 
-  List<Transaction> _parseTransactions(List<dynamic> items) {
-    return items
+  Future<List<Transaction>> _fetchAllTransactions() async {
+    final data = await _client
+        .guardData(() => _client.dio.get(BanqueEndpoints.transactions));
+    return (data as List)
         .map((e) => TransactionDto.fromJson(e as Map<String, dynamic>).toDomain())
         .toList();
   }

@@ -29,12 +29,14 @@ flowchart TD
     end
 
     subgraph Network["Réseau — lib/core/network"]
-        ApiClient["ApiClient (Dio)"]
+        AuthClient["authApiClient (Dio)"]
+        BanqueClient["banqueApiClient (Dio)"]
         Interceptors["AuthInterceptor / LoggingInterceptor / ErrorInterceptor"]
-        Endpoints["ApiEndpoints"]
+        Endpoints["AuthEndpoints / BanqueEndpoints"]
     end
 
-    Backend[("Backend REST\n(n'existe pas encore)")]
+    AuthBackend[("auth_api\nport 8081")]
+    BanqueBackend[("banque1_api\nport 8080")]
 
     Screens --> Controllers
     Widgets --> Screens
@@ -50,11 +52,15 @@ flowchart TD
     WalletDS -.implements.- WalletMock
     WalletDS -.implements.- WalletRemote
 
-    AuthRemote --> ApiClient
-    WalletRemote --> ApiClient
-    ApiClient --> Interceptors
-    ApiClient --> Endpoints
-    ApiClient --> Backend
+    AuthRemote --> AuthClient
+    AuthRemote --> BanqueClient
+    WalletRemote --> BanqueClient
+    AuthClient --> Interceptors
+    BanqueClient --> Interceptors
+    AuthClient --> Endpoints
+    BanqueClient --> Endpoints
+    AuthClient --> AuthBackend
+    BanqueClient --> BanqueBackend
 
     Config["AppConfig.dataSourceMode"] -. choisit Mock ou Remote .-> AuthDS
     Config -. choisit Mock ou Remote .-> WalletDS
@@ -67,8 +73,8 @@ flowchart TD
 | UI | `lib/screens/`, `lib/widgets/` | Affichage uniquement. Aucune logique métier : lit l'état via `ref.watch`, déclenche des actions via `ref.read(...).notifier`. |
 | État | `lib/providers/` | Un `AsyncNotifier` par action utilisateur (ex. `LoginController.login()`, `DepositController.submit()`), qui expose `AsyncValue` (Loading/Success/Error) consommé par `.when()` dans les écrans. `SessionController` et `SessionTokenController` détiennent la session en mémoire (utilisateur connecté + jeton simulé). |
 | Domaine | `lib/repositories/` | Contrat stable (`AuthRepository`, `WalletRepository`) que les Controllers appellent. `*RepositoryImpl` ne fait que déléguer à un `DataSource` injecté au constructeur — c'est le seul point de couture entre logique métier et origine des données. |
-| Données | `lib/data/` | `AuthDataSource`/`WalletDataSource` sont des interfaces. `AuthMockDataSource`/`WalletMockDataSource` (dans `data/mock/`) simulent le backend en mémoire. `AuthRemoteDataSource`/`WalletRemoteDataSource` (dans `data/remote/`) appellent le vrai backend via `ApiClient`, et convertissent les DTO JSON (`lib/models/dto/`) en modèles de domaine (`lib/models/`). |
-| Réseau | `lib/core/network/` | `ApiClient` encapsule Dio, `ApiEndpoints` centralise les chemins, trois interceptors gèrent le JWT, les logs et la normalisation des erreurs (`ApiException`). |
+| Données | `lib/data/` | `AuthDataSource`/`WalletDataSource` sont des interfaces. `AuthMockDataSource`/`WalletMockDataSource` (dans `data/mock/`) simulent le backend en mémoire. `AuthRemoteDataSource`/`WalletRemoteDataSource` (dans `data/remote/`) appellent auth_api/banque1_api via `ApiClient`, et convertissent les DTO JSON (`lib/models/dto/`) en modèles de domaine (`lib/models/`). |
+| Réseau | `lib/core/network/` | `ApiClient` encapsule Dio (une instance par backend : `authApiClientProvider`, `banqueApiClientProvider`), `AuthEndpoints`/`BanqueEndpoints` centralisent les chemins, trois interceptors gèrent le JWT, les logs et la normalisation des erreurs (`ApiException`). `ApiClient.guardData` dé-enveloppe en plus le `{ success, message, data }` commun aux deux backends. |
 
 ## Bascule Mock ↔ Remote
 
@@ -78,7 +84,10 @@ flowchart TD
 final authDataSourceProvider = Provider<AuthDataSource>((ref) {
   return switch (AppConfig.dataSourceMode) {
     DataSourceMode.mock => AuthMockDataSource(),
-    DataSourceMode.remote => AuthRemoteDataSource(ref.watch(apiClientProvider)),
+    DataSourceMode.remote => AuthRemoteDataSource(
+        ref.watch(authApiClientProvider),
+        ref.watch(banqueApiClientProvider),
+      ),
   };
 });
 ```

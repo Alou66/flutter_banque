@@ -1,4 +1,5 @@
 import '../../core/errors/app_exception.dart';
+import '../../models/auth_session.dart';
 import '../../models/auth_user.dart';
 import '../../models/registration_data.dart';
 import '../auth_data_source.dart';
@@ -40,7 +41,7 @@ class AuthMockDataSource implements AuthDataSource {
   String? _pendingOtpPhone;
 
   @override
-  Future<AuthUser> login({
+  Future<AuthSession> login({
     required String phoneNumber,
     required String pin,
   }) async {
@@ -52,7 +53,7 @@ class AuthMockDataSource implements AuthDataSource {
     if (account.pin != pin) {
       throw const AppException('Code PIN incorrect.');
     }
-    return account.toUser();
+    return AuthSession(user: account.toUser(), token: _fakeToken(account));
   }
 
   @override
@@ -80,7 +81,7 @@ class AuthMockDataSource implements AuthDataSource {
   }
 
   @override
-  Future<AuthUser> createPin({
+  Future<AuthSession> createPin({
     required RegistrationData data,
     required String pin,
   }) async {
@@ -93,7 +94,7 @@ class AuthMockDataSource implements AuthDataSource {
     );
     _accounts.add(account);
     _pendingOtpPhone = null;
-    return account.toUser();
+    return AuthSession(user: account.toUser(), token: _fakeToken(account));
   }
 
   @override
@@ -172,4 +173,7 @@ class AuthMockDataSource implements AuthDataSource {
     }
     return null;
   }
+
+  String _fakeToken(_MockAccount account) =>
+      'mock.${account.phoneNumber}.${DateTime.now().millisecondsSinceEpoch}';
 }

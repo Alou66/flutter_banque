@@ -15,14 +15,13 @@ class PinSetupController extends AsyncNotifier<AuthUser?> {
     required String pin,
   }) async {
     state = const AsyncLoading();
-    state = await AsyncValue.guard(
-      () => ref.read(authRepositoryProvider).createPin(data: data, pin: pin),
-    );
-    final user = state.value;
-    if (user != null) {
-      ref.read(sessionControllerProvider.notifier).setUser(user);
-      ref.read(sessionTokenControllerProvider.notifier).issue(user.id);
-    }
+    state = await AsyncValue.guard(() async {
+      final session =
+          await ref.read(authRepositoryProvider).createPin(data: data, pin: pin);
+      ref.read(sessionControllerProvider.notifier).setUser(session.user);
+      ref.read(sessionTokenControllerProvider.notifier).issue(session.token);
+      return session.user;
+    });
   }
 }
 

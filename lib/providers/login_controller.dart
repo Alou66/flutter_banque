@@ -14,17 +14,15 @@ class LoginController extends AsyncNotifier<AuthUser?> {
     required String pin,
   }) async {
     state = const AsyncLoading();
-    state = await AsyncValue.guard(
-      () => ref.read(authRepositoryProvider).login(
+    state = await AsyncValue.guard(() async {
+      final session = await ref.read(authRepositoryProvider).login(
             phoneNumber: phoneNumber,
             pin: pin,
-          ),
-    );
-    final user = state.value;
-    if (user != null) {
-      ref.read(sessionControllerProvider.notifier).setUser(user);
-      ref.read(sessionTokenControllerProvider.notifier).issue(user.id);
-    }
+          );
+      ref.read(sessionControllerProvider.notifier).setUser(session.user);
+      ref.read(sessionTokenControllerProvider.notifier).issue(session.token);
+      return session.user;
+    });
   }
 
   void reset() => state = const AsyncData(null);

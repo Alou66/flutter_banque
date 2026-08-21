@@ -1,6 +1,8 @@
 import '../transaction.dart';
 
-/// Représentation JSON d'une [Transaction], telle qu'échangée avec l'API REST.
+/// Représentation JSON d'une [Transaction]. banque1_api (`TransactionResponse`
+/// : `{ id, montant, typeTransaction, dateTransaction }`) ne stocke aucun
+/// libellé : [label] est dérivé de [type] quand absent du JSON.
 class TransactionDto {
   const TransactionDto({
     required this.id,
@@ -16,13 +18,16 @@ class TransactionDto {
   final double amount;
   final DateTime date;
 
-  factory TransactionDto.fromJson(Map<String, dynamic> json) => TransactionDto(
-        id: json['id'] as String,
-        type: TransactionType.values.byName(json['type'] as String),
-        label: json['label'] as String,
-        amount: (json['amount'] as num).toDouble(),
-        date: DateTime.parse(json['date'] as String),
-      );
+  factory TransactionDto.fromJson(Map<String, dynamic> json) {
+    final type = _typeFromJson(json['typeTransaction'] as String);
+    return TransactionDto(
+      id: json['id'].toString(),
+      type: type,
+      label: json['label'] as String? ?? _defaultLabel(type),
+      amount: (json['montant'] as num).toDouble(),
+      date: DateTime.parse(json['dateTransaction'] as String),
+    );
+  }
 
   factory TransactionDto.fromDomain(Transaction transaction) => TransactionDto(
         id: transaction.id,
@@ -34,10 +39,10 @@ class TransactionDto {
 
   Map<String, dynamic> toJson() => {
         'id': id,
-        'type': type.name,
+        'typeTransaction': _typeToJson(type),
         'label': label,
-        'amount': amount,
-        'date': date.toIso8601String(),
+        'montant': amount,
+        'dateTransaction': date.toIso8601String(),
       };
 
   Transaction toDomain() => Transaction(
@@ -48,3 +53,22 @@ class TransactionDto {
         date: date,
       );
 }
+
+TransactionType _typeFromJson(String value) => switch (value) {
+      'DEPOT' => TransactionType.deposit,
+      'RETRAIT' => TransactionType.withdrawal,
+      'PAIEMENT' => TransactionType.payment,
+      _ => throw FormatException('Type de transaction inconnu : $value'),
+    };
+
+String _typeToJson(TransactionType type) => switch (type) {
+      TransactionType.deposit => 'DEPOT',
+      TransactionType.withdrawal => 'RETRAIT',
+      TransactionType.payment => 'PAIEMENT',
+    };
+
+String _defaultLabel(TransactionType type) => switch (type) {
+      TransactionType.deposit => 'Dépôt',
+      TransactionType.withdrawal => 'Retrait',
+      TransactionType.payment => 'Paiement',
+    };

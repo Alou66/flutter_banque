@@ -1,4 +1,5 @@
 import '../data/auth_data_source.dart';
+import '../models/auth_session.dart';
 import '../models/auth_user.dart';
 import '../models/registration_data.dart';
 import 'auth_repository.dart';
@@ -12,7 +13,7 @@ class AuthRepositoryImpl implements AuthRepository {
   final AuthDataSource _dataSource;
 
   @override
-  Future<AuthUser> login({
+  Future<AuthSession> login({
     required String phoneNumber,
     required String pin,
   }) {
@@ -38,7 +39,7 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
-  Future<AuthUser> createPin({
+  Future<AuthSession> createPin({
     required RegistrationData data,
     required String pin,
   }) {

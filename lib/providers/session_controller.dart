@@ -16,8 +16,9 @@ class SessionController extends Notifier<AuthUser?> {
 final sessionControllerProvider =
     NotifierProvider<SessionController, AuthUser?>(SessionController.new);
 
-/// Jeton de session (JWT, simulé tant que le backend n'existe pas). L'état
-/// en mémoire piloté par l'app reste la source de vérité immédiate ; la
+/// Jeton de session (JWT réel en mode remote, fabriqué par
+/// [AuthMockDataSource] en mode mock — voir [AuthSession]). L'état en
+/// mémoire piloté par l'app reste la source de vérité immédiate ; la
 /// persistance via [SessionStorageService] est best-effort et non bloquante,
 /// pour préparer la restauration de session sans changer la signature des
 /// méthodes ci-dessous (aucun appelant n'a besoin de changer).
@@ -25,8 +26,7 @@ class SessionTokenController extends Notifier<String?> {
   @override
   String? build() => null;
 
-  void issue(String userId) {
-    final token = 'mock.$userId.${DateTime.now().millisecondsSinceEpoch}';
+  void issue(String token) {
     state = token;
     unawaited(ref.read(sessionStorageServiceProvider).saveToken(token));
   }

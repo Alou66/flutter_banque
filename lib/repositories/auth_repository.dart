@@ -1,10 +1,14 @@
+import '../models/auth_session.dart';
 import '../models/auth_user.dart';
 import '../models/registration_data.dart';
 
 /// Contrat d'authentification. L'implémentation mock sera remplacée par un
 /// appel REST (Dio) une fois le backend disponible, sans impacter Riverpod/UI.
 abstract class AuthRepository {
-  Future<AuthUser> login({required String phoneNumber, required String pin});
+  Future<AuthSession> login({
+    required String phoneNumber,
+    required String pin,
+  });
 
   Future<void> register({
     required String firstName,
@@ -14,7 +18,7 @@ abstract class AuthRepository {
 
   Future<void> verifyOtp({required String phoneNumber, required String otp});
 
-  Future<AuthUser> createPin({
+  Future<AuthSession> createPin({
     required RegistrationData data,
     required String pin,
   });

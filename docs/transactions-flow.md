@@ -78,4 +78,4 @@ sequenceDiagram
     THC-->>TS: liste étendue (hasMore recalculé)
 ```
 
-`TransactionQuery` est déjà modélisé comme les paramètres d'une future requête REST (`type`, `q`, `sortBy`, `sortOrder`, `page`, `pageSize`) — voir [api-endpoints.md](api-endpoints.md).
+`TransactionQuery` est modélisé comme les paramètres d'une requête REST (`type`, `q`, `sortBy`, `sortOrder`, `page`, `pageSize`), mais banque1_api ne les supporte pas côté serveur : `WalletRemoteDataSource` récupère la liste complète (`GET /transactions/me`) et applique filtre/tri/pagination côté client — voir « Écarts absorbés côté Flutter » dans [api-endpoints.md](api-endpoints.md). `TQC`/`THC` et les écrans n'en savent rien.

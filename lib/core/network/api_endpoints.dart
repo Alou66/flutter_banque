@@ -1,17 +1,21 @@
 /// Chemins des endpoints REST, centralisés pour que les RemoteDataSource
-/// n'utilisent jamais de chaînes littérales.
-abstract class ApiEndpoints {
-  static const String login = '/auth/login';
-  static const String register = '/auth/register';
+/// n'utilisent jamais de chaînes littérales. Split en deux car auth_api et
+/// banque1_api sont deux services distincts (voir [AppConfig.authApiBaseUrl]
+/// et [AppConfig.banqueApiBaseUrl]).
+abstract class AuthEndpoints {
+  static const String sendOtp = '/auth/send-otp';
   static const String verifyOtp = '/auth/verify-otp';
-  static const String createPin = '/auth/create-pin';
-  static const String verifyPin = '/auth/verify-pin';
-  static const String profile = '/profile';
-  static const String changePin = '/profile/change-pin';
+  static const String login = '/auth/login';
+}
 
-  static const String wallet = '/wallet';
-  static const String transactions = '/wallet/transactions';
-  static const String deposit = '/wallet/deposit';
-  static const String withdraw = '/wallet/withdraw';
-  static const String payment = '/wallet/payment';
+abstract class BanqueEndpoints {
+  static const String comptes = '/comptes';
+  static const String compteMe = '/comptes/me';
+  static const String verifyPin = '/comptes/verify-pin';
+  static const String changePin = '/comptes/change-pin';
+
+  static const String transactions = '/transactions/me';
+  static const String depot = '/transactions/depot';
+  static const String retrait = '/transactions/retrait';
+  static const String paiement = '/transactions/paiement';
 }

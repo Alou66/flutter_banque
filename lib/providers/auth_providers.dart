@@ -12,7 +12,10 @@ import 'network_providers.dart';
 final authDataSourceProvider = Provider<AuthDataSource>((ref) {
   return switch (AppConfig.dataSourceMode) {
     DataSourceMode.mock => AuthMockDataSource(),
-    DataSourceMode.remote => AuthRemoteDataSource(ref.watch(apiClientProvider)),
+    DataSourceMode.remote => AuthRemoteDataSource(
+        ref.watch(authApiClientProvider),
+        ref.watch(banqueApiClientProvider),
+      ),
   };
 });
 

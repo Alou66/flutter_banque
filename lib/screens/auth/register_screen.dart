@@ -23,12 +23,14 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _firstNameController = TextEditingController();
   final _lastNameController = TextEditingController();
   final _phoneController = TextEditingController();
+  final _numPieceController = TextEditingController();
 
   @override
   void dispose() {
     _firstNameController.dispose();
     _lastNameController.dispose();
     _phoneController.dispose();
+    _numPieceController.dispose();
     super.dispose();
   }
 
@@ -39,6 +41,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       firstName: _firstNameController.text.trim(),
       lastName: _lastNameController.text.trim(),
       phoneNumber: _phoneController.text.trim(),
+      numPiece: _numPieceController.text.trim(),
     );
 
     final success = await ref.read(registerControllerProvider.notifier).submit(
@@ -97,6 +100,19 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 ),
                 const SizedBox(height: AppDimens.spaceMd),
                 PhoneInputField(controller: _phoneController, enabled: !isLoading),
+                const SizedBox(height: AppDimens.spaceMd),
+                TextFormField(
+                  controller: _numPieceController,
+                  enabled: !isLoading,
+                  keyboardType: TextInputType.number,
+                  maxLength: 10,
+                  validator: Validators.numPiece,
+                  decoration: const InputDecoration(
+                    labelText: 'Numéro de pièce d\'identité',
+                    prefixIcon: Icon(Icons.badge_outlined),
+                    counterText: '',
+                  ),
+                ),
                 const SizedBox(height: AppDimens.spaceLg),
                 ElevatedButton(
                   onPressed: isLoading ? null : _submit,

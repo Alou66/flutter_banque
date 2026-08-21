@@ -1,80 +1,52 @@
-# Endpoints REST attendus
+# Endpoints REST réels
 
-Chemins centralisés dans `lib/core/network/api_endpoints.dart`. Base URL configurée dans `AppConfig.baseUrl` (`lib/config/app_config.dart` — actuellement un placeholder, à remplacer par l'URL réelle du backend). Toutes les requêtes portent un header `Authorization: Bearer <jwt>` dès qu'une session existe (ajouté automatiquement par `AuthInterceptor`) ; les endpoints marqués **Auth requise** en dépendent pour identifier l'utilisateur côté serveur — **aucun ne reçoit d'identifiant utilisateur dans le corps de la requête**, le backend doit le déduire du JWT.
+Deux backends distincts, deux base URLs (`AppConfig.authApiBaseUrl` / `AppConfig.banqueApiBaseUrl`, `lib/config/app_config.dart`), chemins centralisés dans `lib/core/network/api_endpoints.dart` (`AuthEndpoints` / `BanqueEndpoints`). Toute requête authentifiée porte `Authorization: Bearer <jwt>` (ajouté par `AuthInterceptor`) ; le backend identifie l'utilisateur via `Authentication.getName()` (le téléphone, sujet du JWT) — jamais via un identifiant dans le corps de la requête.
 
-## Authentification
+Toute réponse 2xx est enveloppée en `{ success, message, data, ... }` ; `ApiClient.guardData` extrait automatiquement `data`, les DTO ne voient donc que son contenu. Toute réponse d'erreur (4xx/5xx) porte un champ `message` au niveau racine, lu par `ErrorInterceptor`.
 
-| Méthode | Endpoint | Auth requise | Corps de la requête | Réponse 2xx |
+## auth_api (port 8081) — OTP, login
+
+| Méthode | Endpoint | Auth requise | Corps | `data` de la réponse |
 |---|---|---|---|---|
-| POST | `/auth/login` | Non | `{ "phoneNumber": string, "pin": string }` | `AuthUserDto` |
-| POST | `/auth/register` | Non | `{ "firstName": string, "lastName": string, "phoneNumber": string }` | 2xx vide (déclenche l'envoi d'un OTP côté backend) |
-| POST | `/auth/verify-otp` | Non | `{ "phoneNumber": string, "otp": string }` | 2xx vide |
-| POST | `/auth/create-pin` | Non | `{ "firstName": string, "lastName": string, "phoneNumber": string, "pin": string }` | `AuthUserDto` |
-| POST | `/auth/verify-pin` | Oui | `{ "phoneNumber": string, "pin": string }` | 2xx vide |
-| GET | `/profile` | Oui | — | `AuthUserDto` |
-| PUT | `/profile` | Oui | `{ "firstName": string, "lastName": string, "phoneNumber": string }` | `AuthUserDto` mis à jour |
-| POST | `/profile/change-pin` | Oui | `{ "currentPin": string, "newPin": string }` | 2xx vide |
+| POST | `/api/auth/send-otp` | Non | `{ telephone }` | `{ message, expiresAt }` |
+| POST | `/api/auth/verify-otp` | Non | `{ telephone, otp }` | `{ message, expiresAt }` |
+| POST | `/api/auth/login` | Non | `{ telephone, pin }` | `{ token, telephone, nom, prenom, tokenExpiresAt }` |
 
-`AuthUserDto` :
+`telephone` : 9 chiffres. `pin` : 4 à 6 chiffres côté auth_api (4 exactement côté compte, voir plus bas).
 
-```json
-{
-  "id": "700000000",
-  "firstName": "Alassane",
-  "lastName": "Diallo",
-  "phoneNumber": "700000000"
-}
-```
+## banque1_api (port 8080) — comptes, transactions
 
-## Wallet
-
-| Méthode | Endpoint | Auth requise | Corps / Query | Réponse 2xx |
+| Méthode | Endpoint | Auth requise | Corps | `data` de la réponse |
 |---|---|---|---|---|
-| GET | `/wallet` | Oui | — | `WalletDto` |
-| GET | `/wallet/transactions` | Oui | Query : `limit` **ou** `type`, `q`, `sortBy`, `sortOrder`, `page`, `pageSize` (voir ci-dessous) | `List<TransactionDto>` (avec `limit`) ou `TransactionPageDto` (avec pagination) |
-| POST | `/wallet/deposit` | Oui | `{ "amount": number }` | `TransactionDto` |
-| POST | `/wallet/withdraw` | Oui | `{ "amount": number }` | `TransactionDto` |
-| POST | `/wallet/payment` | Oui | `{ "amount": number, "label": string }` | `TransactionDto` |
+| POST | `/api/comptes` | Non (OTP déjà vérifié requis) | `{ prenom, nom, telephone, pin, numPiece, adresse? }` | `CompteResponse` |
+| GET | `/api/comptes/me` | Oui | — | `CompteResponse` |
+| PUT | `/api/comptes` | Oui | `{ prenom, nom, telephone }` | `CompteResponse` à jour |
+| POST | `/api/comptes/verify-pin` | Oui | `{ pin }` | — (401 si incorrect) |
+| POST | `/api/comptes/change-pin` | Oui | `{ currentPin, newPin }` | — |
+| GET | `/api/transactions/me` | Oui | — | `TransactionResponse[]` (liste complète, pas de filtre/tri/pagination serveur) |
+| POST | `/api/transactions/depot` | Oui | `{ montant }` | `TransactionResponse` |
+| POST | `/api/transactions/retrait` | Oui | `{ montant }` | `TransactionResponse` |
+| POST | `/api/transactions/paiement` | Oui | `{ montant }` | `TransactionResponse` |
 
-`GET /wallet/transactions` sert deux usages avec les mêmes chemins mais des paramètres différents :
-- **Aperçu Dashboard** (5 dernières) : `?limit=5` → tableau simple de `TransactionDto`.
-- **Historique complet** (recherche/filtre/tri/pagination) : `?type=deposit&q=canal&sortBy=date&sortOrder=desc&page=1&pageSize=10` → `TransactionPageDto`. `type` omis = tous types ; `q` omis/vide = pas de recherche texte. `sortBy` ∈ `date|amount|type`, `sortOrder` ∈ `asc|desc`.
+`telephone` : 9 chiffres, préfixe `70`, `77` ou `78`. `pin` : exactement 4 chiffres. `numPiece` : 10 chiffres, obligatoire à la création de compte. `montant` : entier (FCFA, pas de décimales).
 
-`WalletDto` :
-
-```json
-{ "balance": 250000.0, "currency": "FCFA", "accountNumber": "700000000" }
-```
-
-`TransactionDto` (`type` ∈ `deposit|withdrawal|payment`, `date` en ISO 8601) :
+`CompteResponse` :
 
 ```json
-{
-  "id": "t1",
-  "type": "deposit",
-  "label": "Dépôt Orange Money",
-  "amount": 50000.0,
-  "date": "2026-07-20T11:00:00.000Z"
-}
+{ "id": 8, "solde": 50000, "dateCreation": "2026-08-21", "numPiece": "9988776655",
+  "prenom": "Test", "nom": "User", "adresse": null, "telephone": "781318048", "actif": true }
 ```
 
-`TransactionPageDto` :
+`TransactionResponse` (`typeTransaction` ∈ `DEPOT|RETRAIT|PAIEMENT`, `dateTransaction` en `LocalDate`, pas de libellé stocké) :
 
 ```json
-{
-  "items": [ /* TransactionDto[] */ ],
-  "page": 1,
-  "pageSize": 10,
-  "totalCount": 6
-}
+{ "id": 5, "montant": 50000, "typeTransaction": "DEPOT", "dateTransaction": "2026-08-21" }
 ```
 
-## Format d'erreur attendu
+## Écarts absorbés côté Flutter (documentés, pas des bugs)
 
-`ErrorInterceptor` (`lib/core/network/interceptors/error_interceptor.dart`) lit `response.data["message"]` pour toute réponse HTTP en erreur (4xx/5xx) et l'affiche telle quelle à l'utilisateur. Le backend doit donc répondre :
-
-```json
-{ "message": "Code PIN incorrect." }
-```
-
-Sans ce champ, un message générique (« Erreur serveur (`<code>`). ») est utilisé à la place — fonctionnel, mais moins parlant pour l'utilisateur.
+- **Devise** : absente du backend, codée en dur `'FCFA'` côté client (`WalletDto`).
+- **Numéro de compte** : pas de champ dédié, `WalletDto.accountNumber` = `telephone`.
+- **Libellé de transaction** : absent du backend, dérivé du type (`"Dépôt"`, `"Retrait"`, `"Paiement"`) par `TransactionDto.fromJson` quand `label` n'est pas dans le JSON. Pour un paiement, le libellé saisi par l'utilisateur n'est affiché que pour la transaction fraîchement créée (retour immédiat de `WalletRemoteDataSource.pay`) — il n'est pas persisté, donc absent au prochain rechargement de l'historique.
+- **Recherche/tri/pagination de l'historique** : aucun support serveur (`GET /transactions/me` renvoie tout). `WalletRemoteDataSource` applique `TransactionQuery` côté client sur la liste complète, pour que `TransactionQueryController` et les écrans n'aient rien à savoir de cette limitation.
+- **JWT à l'inscription** : `POST /api/comptes` ne renvoie pas de jeton. `AuthRemoteDataSource.createPin` enchaîne un `POST /auth/login` juste après la création du compte pour obtenir un vrai JWT.

@@ -1,6 +1,7 @@
 import '../auth_user.dart';
 
-/// Représentation JSON d'un [AuthUser], telle qu'échangée avec l'API REST.
+/// Représentation JSON d'un [AuthUser], telle que renvoyée par banque1_api
+/// (`CompteResponse` : `{ id, prenom, nom, telephone, ... }`).
 class AuthUserDto {
   const AuthUserDto({
     required this.id,
@@ -15,10 +16,10 @@ class AuthUserDto {
   final String phoneNumber;
 
   factory AuthUserDto.fromJson(Map<String, dynamic> json) => AuthUserDto(
-        id: json['id'] as String,
-        firstName: json['firstName'] as String,
-        lastName: json['lastName'] as String,
-        phoneNumber: json['phoneNumber'] as String,
+        id: json['id'].toString(),
+        firstName: json['prenom'] as String,
+        lastName: json['nom'] as String,
+        phoneNumber: json['telephone'] as String,
       );
 
   factory AuthUserDto.fromDomain(AuthUser user) => AuthUserDto(
@@ -30,9 +31,9 @@ class AuthUserDto {
 
   Map<String, dynamic> toJson() => {
         'id': id,
-        'firstName': firstName,
-        'lastName': lastName,
-        'phoneNumber': phoneNumber,
+        'prenom': firstName,
+        'nom': lastName,
+        'telephone': phoneNumber,
       };
 
   AuthUser toDomain() => AuthUser(

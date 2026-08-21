@@ -77,6 +77,7 @@ void main() {
       firstName: 'Awa',
       lastName: 'Diallo',
       phoneNumber: '701234567',
+      numPiece: '1234567890',
     );
     final json = RegistrationDataDto.fromDomain(data).toJson();
     final decoded = RegistrationDataDto.fromJson(json).toDomain();

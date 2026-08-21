@@ -13,7 +13,7 @@ final walletDataSourceProvider = Provider<WalletDataSource>((ref) {
   return switch (AppConfig.dataSourceMode) {
     DataSourceMode.mock => WalletMockDataSource(),
     DataSourceMode.remote =>
-      WalletRemoteDataSource(ref.watch(apiClientProvider)),
+      WalletRemoteDataSource(ref.watch(banqueApiClientProvider)),
   };
 });
 
