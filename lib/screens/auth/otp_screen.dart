@@ -58,8 +58,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
             children: [
               AuthHeader(
                 title: 'Vérification',
-                subtitle:
-                    'Entrez le code envoyé au ${widget.data.phoneNumber}',
+                subtitle: 'Entrez le code envoyé à ${widget.data.email}',
               ),
               const SizedBox(height: AppDimens.spaceXl),
               CodeInputField(

@@ -25,11 +25,13 @@ class AuthRepositoryImpl implements AuthRepository {
     required String firstName,
     required String lastName,
     required String phoneNumber,
+    required String email,
   }) {
     return _dataSource.register(
       firstName: firstName,
       lastName: lastName,
       phoneNumber: phoneNumber,
+      email: email,
     );
   }
 

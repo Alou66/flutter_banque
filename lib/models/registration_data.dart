@@ -7,6 +7,7 @@ class RegistrationData extends Equatable {
     required this.firstName,
     required this.lastName,
     required this.phoneNumber,
+    required this.email,
     required this.numPiece,
   });
 
@@ -14,10 +15,16 @@ class RegistrationData extends Equatable {
   final String lastName;
   final String phoneNumber;
 
+  /// Adresse email, obligatoire : c'est elle qui reçoit le code OTP (envoyé
+  /// via Brevo par auth_api) et elle est aussi stockée sur le compte
+  /// (`CompteRequest.email` côté banque1_api).
+  final String email;
+
   /// Numéro de pièce d'identité (10 chiffres), obligatoire pour la création
   /// de compte côté banque1_api (`CompteRequest.numPiece`).
   final String numPiece;
 
   @override
-  List<Object?> get props => [firstName, lastName, phoneNumber, numPiece];
+  List<Object?> get props =>
+      [firstName, lastName, phoneNumber, email, numPiece];
 }

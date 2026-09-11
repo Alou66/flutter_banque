@@ -77,6 +77,7 @@ void main() {
       firstName: 'Awa',
       lastName: 'Diallo',
       phoneNumber: '701234567',
+      email: 'awa.diallo@example.com',
       numPiece: '1234567890',
     );
     final json = RegistrationDataDto.fromDomain(data).toJson();

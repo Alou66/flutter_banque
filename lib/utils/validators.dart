@@ -8,6 +8,8 @@ abstract class Validators {
   static final _otpRegExp = RegExp(r'^\d{6}$');
   // Doit rester aligné avec CompteRequest.numPiece dans banque1_api.
   static final _numPieceRegExp = RegExp(r'^\d{10}$');
+  // Validation simple, alignée avec @Email côté serveur (OtpRequest/CompteRequest).
+  static final _emailRegExp = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
 
   static String? name(String? value) {
     if (value == null || value.trim().length < 2) {
@@ -36,6 +38,16 @@ abstract class Validators {
   static String? otp(String? value) {
     if (value == null || !_otpRegExp.hasMatch(value)) {
       return 'Le code doit contenir 6 chiffres.';
+    }
+    return null;
+  }
+
+  static String? email(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'L\'email est requis.';
+    }
+    if (!_emailRegExp.hasMatch(value.trim())) {
+      return 'Email invalide.';
     }
     return null;
   }

@@ -11,6 +11,7 @@ class RegisterController extends AsyncNotifier<void> {
     required String firstName,
     required String lastName,
     required String phoneNumber,
+    required String email,
   }) async {
     state = const AsyncLoading();
     state = await AsyncValue.guard(
@@ -18,6 +19,7 @@ class RegisterController extends AsyncNotifier<void> {
             firstName: firstName,
             lastName: lastName,
             phoneNumber: phoneNumber,
+            email: email,
           ),
     );
     return !state.hasError;

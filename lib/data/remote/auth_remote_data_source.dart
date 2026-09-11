@@ -32,12 +32,14 @@ class AuthRemoteDataSource implements AuthDataSource {
     required String firstName,
     required String lastName,
     required String phoneNumber,
+    required String email,
   }) async {
     // auth_api ne crée pas le compte à cette étape (prénom/nom ne sont
-    // utiles qu'à POST /comptes, dans createPin) : elle envoie juste l'OTP.
+    // utiles qu'à POST /comptes, dans createPin) : elle envoie juste l'OTP,
+    // par email (Brevo), à l'adresse fournie ici.
     await _authClient.guardData(() => _authClient.dio.post(
           AuthEndpoints.sendOtp,
-          data: {'telephone': phoneNumber},
+          data: {'telephone': phoneNumber, 'email': email},
         ));
   }
 
@@ -66,6 +68,7 @@ class AuthRemoteDataSource implements AuthDataSource {
             'prenom': data.firstName,
             'nom': data.lastName,
             'telephone': data.phoneNumber,
+            'email': data.email,
             'numPiece': data.numPiece,
             'pin': pin,
           },

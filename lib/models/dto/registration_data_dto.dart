@@ -6,12 +6,14 @@ class RegistrationDataDto {
     required this.firstName,
     required this.lastName,
     required this.phoneNumber,
+    required this.email,
     required this.numPiece,
   });
 
   final String firstName;
   final String lastName;
   final String phoneNumber;
+  final String email;
   final String numPiece;
 
   factory RegistrationDataDto.fromJson(Map<String, dynamic> json) =>
@@ -19,6 +21,7 @@ class RegistrationDataDto {
         firstName: json['firstName'] as String,
         lastName: json['lastName'] as String,
         phoneNumber: json['phoneNumber'] as String,
+        email: json['email'] as String,
         numPiece: json['numPiece'] as String,
       );
 
@@ -27,6 +30,7 @@ class RegistrationDataDto {
         firstName: data.firstName,
         lastName: data.lastName,
         phoneNumber: data.phoneNumber,
+        email: data.email,
         numPiece: data.numPiece,
       );
 
@@ -34,6 +38,7 @@ class RegistrationDataDto {
         'firstName': firstName,
         'lastName': lastName,
         'phoneNumber': phoneNumber,
+        'email': email,
         'numPiece': numPiece,
       };
 
@@ -41,6 +46,7 @@ class RegistrationDataDto {
         firstName: firstName,
         lastName: lastName,
         phoneNumber: phoneNumber,
+        email: email,
         numPiece: numPiece,
       );
 }

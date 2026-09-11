@@ -9,12 +9,14 @@ class _MockAccount {
     required this.firstName,
     required this.lastName,
     required this.phoneNumber,
+    required this.email,
     required this.pin,
   });
 
   final String firstName;
   final String lastName;
   final String phoneNumber;
+  final String email;
   final String pin;
 
   AuthUser toUser() => AuthUser(
@@ -33,6 +35,7 @@ class AuthMockDataSource implements AuthDataSource {
       firstName: 'Alassane',
       lastName: 'Diallo',
       phoneNumber: '700000000',
+      email: 'alassane.diallo@example.com',
       pin: '1234',
     ),
   ];
@@ -61,6 +64,7 @@ class AuthMockDataSource implements AuthDataSource {
     required String firstName,
     required String lastName,
     required String phoneNumber,
+    required String email,
   }) async {
     await Future.delayed(const Duration(milliseconds: 1200));
     if (_findAccount(phoneNumber) != null) {
@@ -90,6 +94,7 @@ class AuthMockDataSource implements AuthDataSource {
       firstName: data.firstName,
       lastName: data.lastName,
       phoneNumber: data.phoneNumber,
+      email: data.email,
       pin: pin,
     );
     _accounts.add(account);
@@ -139,6 +144,7 @@ class AuthMockDataSource implements AuthDataSource {
       firstName: firstName,
       lastName: lastName,
       phoneNumber: phoneNumber,
+      email: _accounts[index].email,
       pin: _accounts[index].pin,
     );
     _accounts[index] = updated;
@@ -163,6 +169,7 @@ class AuthMockDataSource implements AuthDataSource {
       firstName: _accounts[index].firstName,
       lastName: _accounts[index].lastName,
       phoneNumber: _accounts[index].phoneNumber,
+      email: _accounts[index].email,
       pin: newPin,
     );
   }

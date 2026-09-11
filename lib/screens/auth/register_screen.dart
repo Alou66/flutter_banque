@@ -23,6 +23,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _firstNameController = TextEditingController();
   final _lastNameController = TextEditingController();
   final _phoneController = TextEditingController();
+  final _emailController = TextEditingController();
   final _numPieceController = TextEditingController();
 
   @override
@@ -30,6 +31,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     _firstNameController.dispose();
     _lastNameController.dispose();
     _phoneController.dispose();
+    _emailController.dispose();
     _numPieceController.dispose();
     super.dispose();
   }
@@ -41,6 +43,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       firstName: _firstNameController.text.trim(),
       lastName: _lastNameController.text.trim(),
       phoneNumber: _phoneController.text.trim(),
+      email: _emailController.text.trim(),
       numPiece: _numPieceController.text.trim(),
     );
 
@@ -48,6 +51,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           firstName: data.firstName,
           lastName: data.lastName,
           phoneNumber: data.phoneNumber,
+          email: data.email,
         );
 
     if (!mounted) return;
@@ -100,6 +104,18 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 ),
                 const SizedBox(height: AppDimens.spaceMd),
                 PhoneInputField(controller: _phoneController, enabled: !isLoading),
+                const SizedBox(height: AppDimens.spaceMd),
+                TextFormField(
+                  controller: _emailController,
+                  enabled: !isLoading,
+                  keyboardType: TextInputType.emailAddress,
+                  autocorrect: false,
+                  validator: Validators.email,
+                  decoration: const InputDecoration(
+                    labelText: 'Email',
+                    prefixIcon: Icon(Icons.email_outlined),
+                  ),
+                ),
                 const SizedBox(height: AppDimens.spaceMd),
                 TextFormField(
                   controller: _numPieceController,

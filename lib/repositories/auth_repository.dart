@@ -14,6 +14,7 @@ abstract class AuthRepository {
     required String firstName,
     required String lastName,
     required String phoneNumber,
+    required String email,
   });
 
   Future<void> verifyOtp({required String phoneNumber, required String otp});
