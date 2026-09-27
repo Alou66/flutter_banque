@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/constants/app_dimens.dart';
+import '../../core/errors/app_error_messages.dart';
 import '../../core/theme/app_snackbar.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../providers/login_controller.dart';
@@ -43,7 +44,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         );
   }
 
-  @override
+@override
   Widget build(BuildContext context) {
     ref.listen(loginControllerProvider, (previous, next) {
       next.whenOrNull(
@@ -51,7 +52,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           if (user != null) context.go(RoutePaths.home);
         },
         error: (error, _) {
-          AppSnackBar.error(context, error.toString());
+          final message = AppErrorMessages.translateError(error.toString());
+          AppSnackbar.error(context, message);
         },
       );
     });

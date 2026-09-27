@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/constants/app_dimens.dart';
+import '../../core/errors/app_error_messages.dart';
 import '../../core/theme/app_snackbar.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../providers/wallet_dashboard_controller.dart';
@@ -13,7 +14,7 @@ import '../../widgets/common/primary_loading_button.dart';
 import '../../widgets/common/responsive_body.dart';
 import '../../widgets/wallet/amount_input_field.dart';
 
-class WithdrawScreen extends ConsumerStatefulWidget {
+class WithdrawScreen extends ConsumerState StatefulWidget {
   const WithdrawScreen({super.key});
 
   @override
@@ -48,10 +49,11 @@ class _WithdrawScreenState extends ConsumerState<WithdrawScreen> {
     if (!mounted) return;
     if (success) {
       context.pop();
-      AppSnackBar.success(context, 'Retrait effectué avec succès.');
+      AppSnackbar.success(context, AppErrorMessages.withdrawSuccess);
     } else {
       final error = ref.read(withdrawControllerProvider).error;
-      AppSnackBar.error(context, error.toString());
+      final message = AppErrorMessages.translateError(error.toString());
+      AppSnackbar.error(context, message);
     }
   }
 
@@ -70,54 +72,54 @@ class _WithdrawScreenState extends ConsumerState<WithdrawScreen> {
       appBar: AppBar(title: const Text('Retrait')),
       body: SafeArea(
         child: ResponsiveBody(
-          child: SingleChildScrollView(
-          padding: const EdgeInsets.all(AppDimens.spaceLg),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                AuthHeader(
-                  title: 'Retirer des fonds',
-                  subtitle: balance != null
-                      ? 'Solde disponible : ${Formatters.amount(balance)}'
-                      : 'Entrez le montant à retirer',
-                ),
-                const SizedBox(height: AppDimens.spaceXl),
-                AmountInputField(
-                  controller: _amountController,
-                  enabled: !isLoading,
-                  maxAmount: balance,
-                ),
-                const SizedBox(height: AppDimens.spaceLg),
-                Text('Code PIN', style: AppTextStyles.bodySecondary(context)),
-                const SizedBox(height: AppDimens.spaceSm),
-                CodeInputField(
-                  length: 4,
-                  obscure: true,
-                  autofocus: false,
-                  onChanged: (value) => setState(() {
-                    _pin = value;
-                    _pinError = null;
-                  }),
-                ),
-                if (_pinError != null) ...[
-                  const SizedBox(height: AppDimens.spaceXs),
-                  Text(
-                    _pinError!,
-                    style: AppTextStyles.caption(context)
-                        .copyWith(color: Theme.of(context).colorScheme.error),
+          child: ScrollView(
+            padding: const EdgeInsets.all(AppDimens.spaceLg),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  AuthHeader(
+                    title: 'Retirer des fonds',
+                    subtitle: balance != null
+                        ? 'Solde disponible : ${Formatters.amount(balance)}'
+                        : 'Entrez le montant à retirer',
+                  ),
+                  const SizedBox(height: AppDimens.spaceXl),
+                  AmountInputField(
+                    controller: _amountController,
+                    enabled: !isLoading,
+                    maxAmount: balance,
+                  ),
+                  const SizedBox(height: AppDimens.spaceLg),
+                  Text('Code PIN', style: AppTextStyles.bodySecondary(context)),
+                  const SizedBox(height: AppDimens.spaceSm),
+                  CodeInputField(
+                    length: 4,
+                    obscure: true,
+                    autofocus: false,
+                    onChanged: (value) => setState(() {
+                      _pin = value;
+                      _pinError = null;
+                    }),
+                  ),
+                  if (_pinError != null) ...[
+                    const SizedBox(height: AppDimens.spaceXs),
+                    Text(
+                      _pinError!,
+                      style: AppTextStyles.caption(context)
+                          .copyWith(color: Theme.of(context).colorScheme.error),
+                    ),
+                  ],
+                  const SizedBox(height: AppDimens.spaceLg),
+                  PrimaryLoadingButton(
+                    label: 'Retirer',
+                    isLoading: isLoading,
+                    onPressed: _submit,
                   ),
                 ],
-                const SizedBox(height: AppDimens.spaceLg),
-                PrimaryLoadingButton(
-                  label: 'Retirer',
-                  isLoading: isLoading,
-                  onPressed: _submit,
-                ),
-              ],
+              ),
             ),
-          ),
           ),
         ),
       ),

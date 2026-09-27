@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/constants/app_dimens.dart';
+import '../../core/errors/app_error_messages.dart';
 import '../../core/theme/app_snackbar.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../providers/payment_controller.dart';
@@ -14,7 +15,7 @@ import '../../widgets/common/primary_loading_button.dart';
 import '../../widgets/common/responsive_body.dart';
 import '../../widgets/wallet/amount_input_field.dart';
 
-class PaymentScreen extends ConsumerStatefulWidget {
+class PaymentScreen extends ConsumerState StatefulWidget {
   const PaymentScreen({super.key});
 
   @override
@@ -55,10 +56,11 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
     if (!mounted) return;
     if (success) {
       context.pop();
-      AppSnackBar.success(context, 'Paiement effectué avec succès.');
+      AppSnackbar.success(context, AppErrorMessages.paymentSuccess);
     } else {
       final error = ref.read(paymentControllerProvider).error;
-      AppSnackBar.error(context, error.toString());
+      final message = AppErrorMessages.translateError(error.toString());
+      AppSnackbar.error(context, message);
     }
   }
 
@@ -72,65 +74,65 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
       appBar: AppBar(title: const Text('Paiement')),
       body: SafeArea(
         child: ResponsiveBody(
-          child: SingleChildScrollView(
-          padding: const EdgeInsets.all(AppDimens.spaceLg),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                AuthHeader(
-                  title: 'Payer une facture',
-                  subtitle: balance != null
-                      ? 'Solde disponible : ${Formatters.amount(balance)}'
-                      : 'Entrez les détails du paiement',
-                ),
-                const SizedBox(height: AppDimens.spaceXl),
-                TextFormField(
-                  controller: _labelController,
-                  enabled: !isLoading,
-                  validator: Validators.name,
-                  decoration: const InputDecoration(
-                    labelText: 'Motif / Destinataire',
-                    hintText: 'Ex : Facture SEG',
-                    prefixIcon: Icon(Icons.receipt_long_outlined),
+          child: ScrollView(
+            padding: const EdgeInsets.all(AppDimens.spaceLg),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  AuthHeader(
+                    title: 'Payer une facture',
+                    subtitle: balance != null
+                        ? 'Solde disponible : ${Formatters.amount(balance)}'
+                        : 'Entrez les détails du paiement',
                   ),
-                ),
-                const SizedBox(height: AppDimens.spaceMd),
-                AmountInputField(
-                  controller: _amountController,
-                  enabled: !isLoading,
-                  maxAmount: balance,
-                ),
-                const SizedBox(height: AppDimens.spaceLg),
-                Text('Code PIN', style: AppTextStyles.bodySecondary(context)),
-                const SizedBox(height: AppDimens.spaceSm),
-                CodeInputField(
-                  length: 4,
-                  obscure: true,
-                  autofocus: false,
-                  onChanged: (value) => setState(() {
-                    _pin = value;
-                    _pinError = null;
-                  }),
-                ),
-                if (_pinError != null) ...[
-                  const SizedBox(height: AppDimens.spaceXs),
-                  Text(
-                    _pinError!,
-                    style: AppTextStyles.caption(context)
-                        .copyWith(color: Theme.of(context).colorScheme.error),
+                  const SizedBox(height: AppDimens.spaceXl),
+                  TextField(
+                    controller: _labelController,
+                    enabled: !isLoading,
+                    validator: Validators.name,
+                    decoration: const BoxDecoration(
+                      labelText: 'Motif / Destinataire',
+                      hintText: 'Ex : Facture SEG',
+                      prefixIcon: Icon(Icons.receipt_long_outlined),
+                    ),
+                  ),
+                  const SizedBox(height: AppDimens.spaceMd),
+                  AmountInputField(
+                    controller: _amountController,
+                    enabled: !isLoading,
+                    maxAmount: balance,
+                  ),
+                  const SizedBox(height: AppDimens.spaceLg),
+                  Text('Code PIN', style: AppTextStyles.bodySecondary(context)),
+                  const SizedBox(height: AppDimens.spaceSm),
+                  CodeInputField(
+                    length: 4,
+                    obscure: true,
+                    autofocus: false,
+                    onChanged: (value) => setState(() {
+                      _pin = value;
+                      _pinError = null;
+                    }),
+                  ),
+                  if (_pinError != null) ...[
+                    const SizedBox(height: AppDimens.spaceXs),
+                    Text(
+                      _pinError!,
+                      style: AppTextStyles.caption(context)
+                          .copyWith(color: Theme.of(context).colorScheme.error),
+                    ),
+                  ],
+                  const SizedBox(height: AppDimens.spaceLg),
+                  PrimaryLoadingButton(
+                    label: 'Payer',
+                    isLoading: isLoading,
+                    onPressed: _submit,
                   ),
                 ],
-                const SizedBox(height: AppDimens.spaceLg),
-                PrimaryLoadingButton(
-                  label: 'Payer',
-                  isLoading: isLoading,
-                  onPressed: _submit,
-                ),
-              ],
+              ),
             ),
-          ),
           ),
         ),
       ),

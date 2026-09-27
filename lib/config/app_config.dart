@@ -13,8 +13,8 @@ abstract class AppConfig {
   // Appareil physique : remplacer par l'IP LAN de la machine qui exécute le backend.
   static const String authApiBaseUrl = 'http://localhost:8081/api';
 
-  // banque1_api (port 8080) : comptes, transactions.
-  static const String banqueApiBaseUrl = 'http://localhost:8080/api';
+  // banque1_api (port 8083) : comptes, transactions.
+  static const String banqueApiBaseUrl = 'http://localhost:8083/api';
 
   static const Duration connectTimeout = Duration(seconds: 10);
   static const Duration receiveTimeout = Duration(seconds: 10);

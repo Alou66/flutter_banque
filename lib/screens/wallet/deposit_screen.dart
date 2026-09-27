@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/constants/app_dimens.dart';
+import '../../core/errors/app_error_messages.dart';
 import '../../core/theme/app_snackbar.dart';
 import '../../providers/deposit_controller.dart';
 import '../../widgets/auth/auth_header.dart';
@@ -9,7 +10,7 @@ import '../../widgets/common/primary_loading_button.dart';
 import '../../widgets/common/responsive_body.dart';
 import '../../widgets/wallet/amount_input_field.dart';
 
-class DepositScreen extends ConsumerStatefulWidget {
+class DepositScreen extends ConsumerState StatefulWidget {
   const DepositScreen({super.key});
 
   @override
@@ -38,10 +39,11 @@ class _DepositScreenState extends ConsumerState<DepositScreen> {
     if (!mounted) return;
     if (success) {
       context.pop();
-      AppSnackBar.success(context, 'Dépôt effectué avec succès.');
+      AppSnackbar.success(context, AppErrorMessages.depositSuccess);
     } else {
       final error = ref.read(depositControllerProvider).error;
-      AppSnackBar.error(context, error.toString());
+      final message = AppErrorMessages.translateError(error.toString());
+      AppSnackbar.error(context, message);
     }
   }
 
@@ -53,7 +55,7 @@ class _DepositScreenState extends ConsumerState<DepositScreen> {
       appBar: AppBar(title: const Text('Dépôt')),
       body: SafeArea(
         child: ResponsiveBody(
-          child: SingleChildScrollView(
+          child: ScrollView(
             padding: const EdgeInsets.all(AppDimens.spaceLg),
             child: Form(
               key: _formKey,
@@ -65,7 +67,10 @@ class _DepositScreenState extends ConsumerState<DepositScreen> {
                     subtitle: 'Entrez le montant que vous souhaitez déposer',
                   ),
                   const SizedBox(height: AppDimens.spaceXl),
-                  AmountInputField(controller: _amountController, enabled: !isLoading),
+                  AmountInputField(
+                    controller: _amountController,
+                    enabled: !isLoading,
+                  ),
                   const SizedBox(height: AppDimens.spaceLg),
                   PrimaryLoadingButton(
                     label: 'Déposer',
