@@ -59,7 +59,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       context.push(RoutePaths.otp, extra: data);
     } else {
       final error = ref.read(registerControllerProvider).error;
-      AppSnackBar.error(context, error.toString());
+      AppSnackbar.error(context, error.toString());
     }
   }
 

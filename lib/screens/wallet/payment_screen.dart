@@ -15,7 +15,7 @@ import '../../widgets/common/primary_loading_button.dart';
 import '../../widgets/common/responsive_body.dart';
 import '../../widgets/wallet/amount_input_field.dart';
 
-class PaymentScreen extends ConsumerState StatefulWidget {
+class PaymentScreen extends ConsumerStatefulWidget {
   const PaymentScreen({super.key});
 
   @override
@@ -74,7 +74,7 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
       appBar: AppBar(title: const Text('Paiement')),
       body: SafeArea(
         child: ResponsiveBody(
-          child: ScrollView(
+          child: SingleChildScrollView(
             padding: const EdgeInsets.all(AppDimens.spaceLg),
             child: Form(
               key: _formKey,
@@ -88,11 +88,11 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
                         : 'Entrez les détails du paiement',
                   ),
                   const SizedBox(height: AppDimens.spaceXl),
-                  TextField(
+                  TextFormField(
                     controller: _labelController,
                     enabled: !isLoading,
                     validator: Validators.name,
-                    decoration: const BoxDecoration(
+                    decoration: const InputDecoration(
                       labelText: 'Motif / Destinataire',
                       hintText: 'Ex : Facture SEG',
                       prefixIcon: Icon(Icons.receipt_long_outlined),

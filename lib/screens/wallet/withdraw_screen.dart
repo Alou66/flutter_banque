@@ -14,7 +14,7 @@ import '../../widgets/common/primary_loading_button.dart';
 import '../../widgets/common/responsive_body.dart';
 import '../../widgets/wallet/amount_input_field.dart';
 
-class WithdrawScreen extends ConsumerState StatefulWidget {
+class WithdrawScreen extends ConsumerStatefulWidget {
   const WithdrawScreen({super.key});
 
   @override
@@ -72,7 +72,7 @@ class _WithdrawScreenState extends ConsumerState<WithdrawScreen> {
       appBar: AppBar(title: const Text('Retrait')),
       body: SafeArea(
         child: ResponsiveBody(
-          child: ScrollView(
+          child: SingleChildScrollView(
             padding: const EdgeInsets.all(AppDimens.spaceLg),
             child: Form(
               key: _formKey,

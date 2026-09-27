@@ -3,7 +3,7 @@ import 'app_colors.dart';
 
 /// Affiche des SnackBars visuellement cohérentes (succès/erreur), en plus du
 /// [SnackBarThemeData] déjà appliqué globalement par [AppTheme].
-abstract class AppSnackBar {
+abstract class AppSnackbar {
   static void success(BuildContext context, String message) {
     _show(context, message, icon: Icons.check_circle_outline, color: AppColors.success);
   }

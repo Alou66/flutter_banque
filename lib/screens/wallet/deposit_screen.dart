@@ -10,7 +10,7 @@ import '../../widgets/common/primary_loading_button.dart';
 import '../../widgets/common/responsive_body.dart';
 import '../../widgets/wallet/amount_input_field.dart';
 
-class DepositScreen extends ConsumerState StatefulWidget {
+class DepositScreen extends ConsumerStatefulWidget {
   const DepositScreen({super.key});
 
   @override
@@ -55,7 +55,7 @@ class _DepositScreenState extends ConsumerState<DepositScreen> {
       appBar: AppBar(title: const Text('Dépôt')),
       body: SafeArea(
         child: ResponsiveBody(
-          child: ScrollView(
+          child: SingleChildScrollView(
             padding: const EdgeInsets.all(AppDimens.spaceLg),
             child: Form(
               key: _formKey,

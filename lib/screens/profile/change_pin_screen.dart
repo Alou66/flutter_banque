@@ -62,7 +62,7 @@ class _ChangePinScreenState extends ConsumerState<ChangePinScreen> {
     if (!mounted) return;
     if (success) {
       context.pop();
-      AppSnackBar.success(context, 'Code PIN modifié avec succès.');
+      AppSnackbar.success(context, 'Code PIN modifié avec succès.');
     } else {
       final error = ref.read(changePinControllerProvider).error;
       setState(() {

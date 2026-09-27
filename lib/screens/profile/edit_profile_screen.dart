@@ -54,10 +54,10 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     if (!mounted) return;
     if (success) {
       context.pop();
-      AppSnackBar.success(context, 'Profil mis à jour avec succès.');
+      AppSnackbar.success(context, 'Profil mis à jour avec succès.');
     } else {
       final error = ref.read(editProfileControllerProvider).error;
-      AppSnackBar.error(context, error.toString());
+      AppSnackbar.error(context, error.toString());
     }
   }
 

@@ -1,5 +1,3 @@
-import 'package:flutter/material.dart';
-
 /// Messages d'erreur et de succès standardisés pour l'interface utilisateur.
 /// Centralise la traduction des erreurs techniques en messages utilisateurs clairs.
 abstract class AppErrorMessages {
